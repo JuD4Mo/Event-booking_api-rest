@@ -4,11 +4,13 @@ import (
 	"log"
 	"net/http"
 
+	"example.com/event-booking/db"
 	"example.com/event-booking/models"
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
+	db.InitDB()
 	// Create a Gin router with default middleware (logger and recovery)
 	router := gin.Default()
 
