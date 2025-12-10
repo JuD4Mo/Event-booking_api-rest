@@ -1,6 +1,8 @@
 package models
 
 import (
+	"errors"
+
 	"example.com/event-booking/db"
 	"example.com/event-booking/utils"
 )
@@ -11,7 +13,7 @@ type User struct {
 	Password string `binding:"required"`
 }
 
-func (user User) Save() error {
+func (user *User) Save() error {
 	query := `
 	INSERT INTO users (email, password) 
 	VALUES
@@ -36,4 +38,23 @@ func (user User) Save() error {
 	userId, err := result.LastInsertId()
 	user.ID = userId
 	return err
+}
+
+func (user *User) ValidateCredentials() error {
+	query := "SELECT id, password FROM users WHERE email = ?"
+	row := db.DB.QueryRow(query, user.Email)
+
+	var retrievedPassword string
+	err := row.Scan(&user.ID, &retrievedPassword)
+	if err != nil {
+		return errors.New("credentials invalid")
+	}
+
+	passwordIsValid := utils.CheckPasswordHash(user.Password, retrievedPassword)
+
+	if !passwordIsValid {
+		return errors.New("credentials invalid")
+	}
+
+	return nil
 }
