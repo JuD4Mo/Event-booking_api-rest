@@ -29,8 +29,10 @@ func createEvent(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "could not parse request data"})
 		return
 	}
-	event.ID = 1
-	event.UserId = 1
+
+	// Traer del contexto de Gin el userId
+	userId := c.GetInt64("userId")
+	event.UserId = userId
 
 	err = event.Save()
 	if err != nil {
@@ -50,9 +52,17 @@ func updateEvent(c *gin.Context) {
 		return
 	}
 
-	_, err = models.GetEventById(eventId)
+	//Traer del contexto de Gin el userId
+	userId := c.GetInt64("userId")
+	event, err := models.GetEventById(eventId)
+
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "could not fetch the event"})
+		return
+	}
+
+	if event.UserId != userId {
+		c.JSON(http.StatusUnauthorized, gin.H{"message": "not authorized to update event, the users do not match"})
 		return
 	}
 
@@ -82,6 +92,13 @@ func deleteEvent(c *gin.Context) {
 	event, err := models.GetEventById(eventId)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "could not fetch the event"})
+		return
+	}
+
+	//Traer del contexto de Gin el userId
+	userId := c.GetInt64("userId")
+	if event.UserId != userId {
+		c.JSON(http.StatusUnauthorized, gin.H{"message": "not authorized to delete event, the users do not match"})
 		return
 	}
 
